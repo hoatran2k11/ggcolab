@@ -22,4 +22,5 @@ sudo qemu-system-x86_64 \
   -device usb-ehci,id=usb,bus=pci.0,addr=0x4 \
   -device usb-tablet \
   -vnc :0 \
-  -smp cores=2
+  -smp cores=2 \
+  -enable-kvm
