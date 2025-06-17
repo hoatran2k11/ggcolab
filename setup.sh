@@ -1,5 +1,44 @@
+#!/bin/bash
+
+echo ">>> TẮT TOÀN BỘ FIREWALL ĐỂ ĐẢM BẢO QEMU HOẠT ĐỘNG"
+
+# Tắt UFW nếu có
+if command -v ufw >/dev/null 2>&1; then
+  echo "[+] Tắt UFW..."
+  sudo ufw disable
+fi
+
+# Tắt firewalld nếu có
+if systemctl list-units --type=service | grep -q firewalld; then
+  echo "[+] Dừng firewalld..."
+  sudo systemctl stop firewalld
+  sudo systemctl disable firewalld
+fi
+
+# Flush iptables nếu có
+if command -v iptables >/dev/null 2>&1; then
+  echo "[+] Xóa toàn bộ rule iptables..."
+  sudo iptables -F
+  sudo iptables -X
+  sudo iptables -t nat -F
+  sudo iptables -t nat -X
+  sudo iptables -t mangle -F
+  sudo iptables -t mangle -X
+  sudo iptables -P INPUT ACCEPT
+  sudo iptables -P FORWARD ACCEPT
+  sudo iptables -P OUTPUT ACCEPT
+fi
+
+# Reset nftables nếu có
+if command -v nft >/dev/null 2>&1; then
+  echo "[+] Reset nftables..."
+  sudo nft flush ruleset
+fi
+
+echo ">>> HOÀN TẤT TẮT FIREWALL"
+
 # Cài QEMU và công cụ liên quan
-sudo apt-get update && sudo apt-get install qemu qemu-utils qemu-system-x86-xen qemu-system-x86 -y
+sudo apt-get update && sudo apt-get install -y qemu qemu-utils qemu-system-x86-xen qemu-system-x86
 
 # Tạo ổ cứng ảo 32GB định dạng RAW nếu chưa tồn tại
 if [ ! -f win.img ]; then
@@ -20,7 +59,7 @@ else
   echo "File win.iso đã tồn tại, bỏ qua tải."
 fi
 
-# Chạy máy ảo Windows qua QEMU
+# Chạy máy ảo Windows qua QEMU, dùng VNC cổng :9 (tức là 5909)
 sudo qemu-system-x86_64 \
   -m 8G \
   -cpu EPYC \
